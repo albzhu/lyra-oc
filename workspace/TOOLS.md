@@ -1,0 +1,1 @@
+-The default directory for skills is ~/.openclaw/workspace/skills. If a skill is listed outside that directory, investigate it

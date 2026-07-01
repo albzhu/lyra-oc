@@ -1,0 +1,597 @@
+{
+  "agents": {
+    "defaults": {
+      "compaction": {
+        "mode": "safeguard",
+        "truncateAfterCompaction": true,
+        "maxActiveTranscriptBytes": "20mb",
+        "maxHistoryShare": 0.5
+      },
+      "imageGenerationModel": {
+        "primary": "openrouter/google/gemini-3-pro-image-preview"
+      },
+      "model": {
+        "fallbacks": [
+          "openrouter/google/gemini-3.1-flash-lite",
+          "openrouter/google/gemini-3.5-flash",
+          "openrouter/anthropic/claude-sonnet-4.6",
+          "openrouter/openai/gpt-5",
+          "openrouter/deepseek/deepseek-v4-flash",
+          "openrouter/anthropic/claude-3-5-haiku"
+        ],
+        "primary": "openrouter/google/gemini-3-flash-preview"
+      },
+      "models": {
+        "openrouter/google/gemini-3.5-flash": {
+          "alias": "gemini"
+        },
+        "openrouter/google/gemini-3.1-flash-lite": {
+          "alias": "gemini 3 lite"
+        },
+        "openrouter/google/gemini-2.5-flash-lite": {
+          "alias": "gemini 2 lite"
+        },
+        "openrouter/anthropic/claude-sonnet-4.6": {
+          "alias": "sonnet"
+        },
+        "openrouter/anthropic/claude-3-5-haiku": {
+          "alias": "haiku"
+        },
+        "openrouter/openai/gpt-5": {
+          "alias": "gpt5"
+        },
+        "openrouter/deepseek/deepseek-v4-flash": {
+          "alias": "deepseek"
+        }
+      },
+      "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace"
+    },
+    "list": [
+      {
+        "agentDir": "${HOME}/.openclaw/agents/main/agent",
+        "id": "main",
+        "model": {
+          "fallbacks": [
+            "openrouter/google/gemini-3.1-flash-lite",
+            "openrouter/anthropic/claude-sonnet-4.6",
+            "openrouter/google/gemini-3.5-flash",
+            "openrouter/openai/gpt-5",
+            "openrouter/deepseek/deepseek-v4-flash"
+          ],
+          "primary": "openrouter/google/gemini-3-flash-preview"
+        },
+        "models": {
+          "anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          },
+          "openrouter/deepseek/deepseek-v4-flash": {
+            "alias": "deepseek"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          },
+          "openrouter/openai/gpt-5": {
+            "alias": "gpt5"
+          },
+          "openrouter/google/gemini-3.1-flash-lite": {
+            "alias": "gemini 3 lite"
+          },
+          "openrouter/anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          }
+        },
+        "name": "LYRA",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace"
+      },
+      {
+        "id": "planner",
+        "model": {
+          "fallbacks": [
+            "openrouter/openai/gpt-5",
+            "openrouter/google/gemini-3.5-flash",
+            "openrouter/anthropic/claude-sonnet-4.6"
+          ],
+          "primary": "openrouter/anthropic/claude-opus-4.8"
+        },
+        "models": {
+          "openrouter/anthropic/claude-opus-4.6": {
+            "alias": "opus4.6"
+          },
+          "openrouter/anthropic/claude-opus-4.8": {},
+          "openrouter/anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          },
+          "openrouter/openai/gpt-5": {
+            "alias": "gpt5"
+          },
+          "anthropic/claude-opus-4.8": {
+            "alias": "opus"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          }
+        },
+        "name": "SPECTRE",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-spectre"
+      },
+      {
+        "id": "coder",
+        "model": {
+          "fallbacks": [
+            "openrouter/openai/gpt-5",
+            "openrouter/deepseek/deepseek-v4-flash",
+            "openrouter/google/gemini-3.5-flash",
+            "openrouter/anthropic/claude-sonnet-4.6"
+          ],
+          "primary": "openrouter/anthropic/claude-sonnet-4.6"
+        },
+        "models": {
+          "openrouter/anthropic/claude-sonnet-4.6": {},
+          "openrouter/deepseek/deepseek-v4-flash": {
+            "alias": "deepseek"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          },
+          "openrouter/openai/gpt-5": {
+            "alias": "gpt5"
+          },
+          "anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          }
+        },
+        "name": "Cinder",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-cinder"
+      },
+      {
+        "id": "reviewer",
+        "model": {
+          "fallbacks": [
+            "openrouter/openai/gpt-5",
+            "openrouter/deepseek/deepseek-v4-flash",
+            "openrouter/anthropic/claude-opus-4.8"
+          ],
+          "primary": "openrouter/anthropic/claude-sonnet-4.6"
+        },
+        "models": {
+          "openrouter/anthropic/claude-opus-4.8": {
+            "alias": "opus"
+          },
+          "openrouter/anthropic/claude-sonnet-4.6": {},
+          "openrouter/deepseek/deepseek-v4-flash": {
+            "alias": "deepseek"
+          },
+          "openrouter/openai/gpt-5": {
+            "alias": "gpt5"
+          },
+          "anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          },
+          "anthropic/claude-opus-4.8": {
+            "alias": "opus"
+          }
+        },
+        "name": "ECHO",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-echo"
+      },
+      {
+        "id": "debug",
+        "model": {
+          "fallbacks": [
+            "openrouter/deepseek/deepseek-v4-flash",
+            "openrouter/anthropic/claude-sonnet-4.6",
+            "openrouter/google/gemini-3.5-flash"
+          ],
+          "primary": "openrouter/openai/gpt-5"
+        },
+        "models": {
+          "openrouter/anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          },
+          "openrouter/deepseek/deepseek-v4-flash": {
+            "alias": "deepseek"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          },
+          "openrouter/openai/gpt-5": {
+            "alias": "gpt5"
+          }
+        },
+        "name": "Zero",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-zero"
+      },
+      {
+        "id": "utility",
+        "model": {
+          "fallbacks": [
+            "openrouter/google/gemini-3.1-flash-lite",
+            "openrouter/google/gemini-2.5-flash-lite",
+            "openrouter/anthropic/claude-3-5-haiku",
+            "openrouter/google/gemini-3.5-flash"
+          ],
+          "primary": "openrouter/google/gemini-3-flash-preview"
+        },
+        "models": {
+          "openrouter/anthropic/claude-3-5-haiku": {
+            "alias": "haiku"
+          },
+          "openrouter/google/gemini-2.5-flash-lite": {
+            "alias": "gemini 2 lite"
+          },
+          "openrouter/google/gemini-3.1-flash-lite": {
+            "alias": "gemini 3 lite"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          }
+        },
+        "name": "Swift",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-swift"
+      },
+      {
+        "id": "sigma",
+        "name": "sigma",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-sigma",
+        "agentDir": "${HOME}/.openclaw/agents/sigma/agent",
+        "model": {
+          "primary": "openrouter/anthropic/claude-sonnet-4.6",
+          "fallbacks": [
+            "openrouter/google/gemini-3.5-flash",
+            "openrouter/anthropic/claude-opus-4.8",
+            "openrouter/anthropic/claude-opus-4.6"
+          ]
+        },
+        "models": {
+          "openrouter/anthropic/claude-sonnet-4.6": {},
+          "openrouter/anthropic/claude-opus-4.8": {
+            "alias": "opus"
+          },
+          "openrouter/anthropic/claude-opus-4.6": {
+            "alias": "opus4.6"
+          },
+          "openrouter/google/gemini-3.5-flash": {
+            "alias": "gemini"
+          },
+          "anthropic/claude-sonnet-4.6": {
+            "alias": "sonnet"
+          }
+        }
+      },
+      {
+        "id": "free",
+        "model": {
+          "fallbacks": [
+            "openrouter/openai/gpt-oss-20b:free",
+            "openrouter/openai/gpt-oss-120b:free",
+            "openrouter/moonshotai/kimi-k2.6:free",
+            "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+            "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+          ],
+          "primary": "openrouter/auto"
+        },
+        "models": {
+          "openrouter/auto": {
+            "alias": "OpenRouter"
+          },
+          "openrouter/moonshotai/kimi-k2.6:free": {},
+          "openrouter/nvidia/nemotron-3-super-120b-a12b:free": {},
+          "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free": {},
+          "openrouter/openai/gpt-oss-120b:free": {},
+          "openrouter/openai/gpt-oss-20b:free": {},
+          "openrouter/owl-alpha": {}
+        },
+        "name": "void",
+        "workspace": "${OPENCLAW_WORKSPACE_ROOT}/workspace-void"
+      }
+    ]
+  },
+  "auth": {
+    "profiles": {
+      "openrouter:default": {
+        "mode": "api_key",
+        "provider": "openrouter"
+      }
+    }
+  },
+  "bindings": [
+    {
+      "comment": "PARKED until Mac mini migration. To enable: install `brew install steipete/tap/imsg` (arm64 native on the mini), grant Full Disk Access + Automation->Messages to the gateway, decide Apple ID (dedicated ID on mini => current allowFrom +18186674686 works), set channels.imessage.enabled=true, then make sync && make restart.",
+      "agentId": "main",
+      "match": {
+        "channel": "imessage"
+      }
+    }
+  ],
+  "channels": {
+    "imessage": {
+      "name": "iMessage (PARKED \u2014 enable on Mac mini)",
+      "enabled": false,
+      "service": "auto",
+      "sendTransport": "applescript",
+      "dmPolicy": "allowlist",
+      "allowFrom": [
+        "+18186674686"
+      ],
+      "groupPolicy": "disabled",
+      "actions": {
+        "reply": true
+      },
+      "markdown": {
+        "tables": "bullets"
+      },
+      "dmHistoryLimit": 20
+    },
+    "discord": {
+      "enabled": true,
+      "groupPolicy": "allowlist",
+      "guilds": {
+        "1483265041229676758": {
+          "comment": "Replace block key (1483265041229676758), channels inside, and users  with your target Discord ID, channel configuration, and User ID",
+          "channels": {
+            "1483267110363856926": {
+              "enabled": true
+            }
+          },
+          "requireMention": true,
+          "users": [
+            "991460982394191884"
+          ]
+        }
+      },
+      "streaming": {
+        "mode": "partial"
+      },
+      "token": "env:DISCORD_BOT_TOKEN"
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "ownerDisplay": "raw",
+    "restart": true
+  },
+  "gateway": {
+    "auth": {
+      "mode": "token",
+      "token": "env:GATEWAY_AUTH_TOKEN"
+    },
+    "bind": "loopback",
+    "mode": "local",
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "contacts.add",
+        "calendar.add",
+        "reminders.add",
+        "sms.send"
+      ]
+    },
+    "port": 18789,
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "boot-md": {
+          "enabled": true
+        },
+        "command-logger": {
+          "enabled": true
+        },
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "messages": {
+    "groupChat": {
+      "visibleReplies": "message_tool"
+    }
+  },
+  "meta": {
+    "lastTouchedAt": "2026-06-08T23:39:12.598Z",
+    "lastTouchedVersion": "2026.6.1"
+  },
+  "models": {
+    "providers": {
+      "google": {
+        "apiKey": "env:GEMINI_API_KEY",
+        "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+        "models": []
+      },
+      "anthropic": {
+        "apiKey": "env:CLAUDE_API_KEY"
+      }
+    }
+  },
+  "plugins": {
+    "allow": [
+      "acpx",
+      "discord",
+      "openrouter",
+      "google",
+      "anthropic",
+      "memory-core",
+      "agent-skills"
+    ],
+    "bundledDiscovery": "compat",
+    "entries": {
+      "acpx": {
+        "enabled": true,
+        "config": {
+          "permissionMode": "approve-reads",
+          "nonInteractivePermissions": "deny",
+          "agents": {
+            "opencode": {
+              "command": "env OPENCODE_CONFIG=${HOME}/.openclaw/opencode/opencode.json ~/.opencode/bin/opencode acp"
+            }
+          }
+        }
+      },
+      "discord": {
+        "enabled": true
+      },
+      "google": {
+        "config": {
+          "webSearch": {
+            "apiKey": "env:GOOGLE_WEB_SEARCH_API_KEY"
+          }
+        },
+        "enabled": true
+      },
+      "openrouter": {
+        "enabled": true
+      },
+      "agent-skills": {
+        "enabled": true
+      },
+      "anthropic": {
+        "enabled": true
+      }
+    },
+    "load": {
+      "paths": [
+        "${OPENCLAW_WORKSPACE_ROOT}/workspace/Repos/agent-skills"
+      ]
+    }
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "skills": {
+    "entries": {
+      "1password": {
+        "enabled": false
+      },
+      "bear-notes": {
+        "enabled": false
+      },
+      "blogwatcher": {
+        "enabled": false
+      },
+      "blucli": {
+        "enabled": false
+      },
+      "bluebubbles": {
+        "enabled": false
+      },
+      "camsnap": {
+        "enabled": false
+      },
+      "coding-agent": {
+        "enabled": false
+      },
+      "eightctl": {
+        "enabled": false
+      },
+      "goplaces": {
+        "apiKey": "env:GOPLACES_API_KEY"
+      },
+      "himalaya": {
+        "enabled": false
+      },
+      "mcporter": {
+        "enabled": false
+      },
+      "model-usage": {
+        "enabled": false
+      },
+      "nano-pdf": {
+        "enabled": false
+      },
+      "notion": {
+        "enabled": false
+      },
+      "obsidian": {
+        "enabled": false
+      },
+      "openai-image-gen": {
+        "apiKey": "env:OPENAI_API_KEY"
+      },
+      "openai-whisper": {
+        "enabled": false
+      },
+      "openai-whisper-api": {
+        "apiKey": "env:OPENAI_API_KEY"
+      },
+      "openhue": {
+        "enabled": false
+      },
+      "oracle": {
+        "enabled": false
+      },
+      "ordercli": {
+        "enabled": false
+      },
+      "peekaboo": {
+        "enabled": false
+      },
+      "remindme": {
+        "enabled": false
+      },
+      "sag": {
+        "enabled": false
+      },
+      "session-logs": {
+        "enabled": false
+      },
+      "sherpa-onnx-tts": {
+        "enabled": false
+      },
+      "slack": {
+        "enabled": false
+      },
+      "songsee": {
+        "enabled": false
+      },
+      "sonoscli": {
+        "enabled": false
+      },
+      "tmux": {
+        "enabled": false
+      },
+      "trello": {
+        "enabled": false
+      },
+      "voice-call": {
+        "enabled": false
+      }
+    }
+  },
+  "tools": {
+    "agentToAgent": {
+      "enabled": true
+    },
+    "elevated": {
+      "allowFrom": {
+        "discord": [
+          "991460982394191884"
+        ]
+      }
+    },
+    "profile": "coding",
+    "sessions": {
+      "visibility": "all"
+    },
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "gemini"
+      }
+    }
+  },
+  "wizard": {
+    "lastRunAt": "2026-05-22T23:52:43.027Z",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local",
+    "lastRunVersion": "2026.5.7"
+  }
+}
