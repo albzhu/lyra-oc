@@ -1,0 +1,96 @@
+# OpenClaw — containerized gateway.
+#
+# Topology: ONE container runs the whole gateway and ALL agents. The agents are
+# config-level personas (agents.list[] in openclaw.json) routed by a single
+# process — they share in-process state (agent-to-agent callbacks, the LIFO
+# return stack in state/callbacks/, one Discord connection, shared memory/cron/
+# tasks). Splitting them into separate containers would break that, so we don't.
+#
+# Scope: option #3 (iMessage parked). iMessage needs native macOS frameworks that
+# a Linux container can't reach, even on a Mac mini host. The `imessage-bridge`
+# seam below is the documented plug-in point for option #2 after the Mac mini
+# migration — see docker/README-docker.md.
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        # Keep in lockstep with update-check.json / `npm view openclaw version`.
+        OPENCLAW_VERSION: "2026.6.9"
+    image: openclaw-gateway:2026.6.9
+    container_name: openclaw-gateway
+    restart: unless-stopped
+
+    # Secrets (CLAUDE_API_KEY, OPENROUTER_API_KEY, DISCORD_BOT_TOKEN,
+    # GATEWAY_AUTH_TOKEN, GEMINI/OPENAI/GOOGLE_*). Same .env the host uses.
+    env_file:
+      - .env
+    environment:
+      # 0.0.0.0 inside the container so the published port is reachable.
+      # Set to "loopback" only if you switch to network_mode: host.
+      OPENCLAW_BIND: "lan"
+      OPENCLAW_GATEWAY_PORT: "18789"
+
+    ports:
+      - "18789:18789"
+
+    volumes:
+      # Bind-mount the entire existing state dir so all agents, workspaces,
+      # memory, sessions, SQLite DBs, cron jobs and config persist and are reused
+      # as-is — the SAME files the host uses, live (not a copy).
+      #
+      # Target MUST equal the host path because openclaw.json stores absolute
+      # workspace/agentDir paths (/Users/albertzhu/.openclaw/...). HOME in the
+      # image is /Users/albertzhu, so this target makes every path resolve
+      # unchanged. If your host user differs, override both with build arg
+      # HOST_HOME and this target.
+      - type: bind
+        source: ${OPENCLAW_HOME:-~/.openclaw}
+        target: /Users/albertzhu/.openclaw
+
+    # Lets the container reach a host-side process (the future iMessage bridge)
+    # at host.docker.internal. Native on Docker Desktop for Mac; explicit here so
+    # it also works on Linux/OrbStack.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    healthcheck:
+      # `gateway health` hits the WS gateway and exits non-zero if unhealthy.
+      # GATEWAY_AUTH_TOKEN comes from env_file, so it's present in every container
+      # process (the entrypoint also exports it as OPENCLAW_GATEWAY_TOKEN).
+      test: ["CMD-SHELL", "openclaw gateway health --url ws://127.0.0.1:18789 --token \"$GATEWAY_AUTH_TOKEN\" --timeout 5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ----------------------------------------------------------------------------
+  # FUTURE — option #2: host-side iMessage bridge (enable after Mac mini transfer)
+  # ----------------------------------------------------------------------------
+  # iMessage cannot run in this Linux container. When the Mac mini is ready, run a
+  # SMALL native macOS process on the host that owns the iMessage channel (Messages
+  # + AppleScript + Full Disk Access + `brew install steipete/tap/imsg`) and relays
+  # to/from the gateway over the local network.
+  #
+  # The gateway reaches that host process via host.docker.internal (already wired
+  # above). The bridge reaches the gateway on localhost:18789. Concretely, after
+  # the bridge exists you would:
+  #   1. Run the bridge natively on the mini (NOT as a compose service — it needs
+  #      macOS APIs the container can't provide).
+  #   2. Re-enable channels.imessage in openclaw-template.json and point its
+  #      transport at the bridge endpoint (e.g. OPENCLAW_IMESSAGE_BRIDGE_URL).
+  #   3. Pass that URL into the gateway via the `environment:` block above.
+  #
+  # This stub is left here as documentation of the seam. It is intentionally NOT a
+  # runnable service yet (no such image exists) and stays under a disabled profile
+  # so `docker compose up` never tries to start it.
+  #
+  # imessage-bridge:
+  #   profiles: ["imessage"]   # never starts unless explicitly requested
+  #   image: REPLACE_WITH_HOST_SIDE_BRIDGE   # must run natively on macOS, not here
+  #   network_mode: host
+  #   environment:
+  #     GATEWAY_URL: "ws://localhost:18789"
+  #     GATEWAY_AUTH_TOKEN: "${GATEWAY_AUTH_TOKEN}"

@@ -1,0 +1,24 @@
+# --- OPEN CLAW ---
+openclaw.json
+
+# --- SKILLS DATA ---
+# Ignore daily portfolio check logs (large volume/churn)
+Skills/portfolio-check/dates/*
+Skills/scenic-video-pipeline/captrues/*
+
+# --- SYSTEM & ENVIRONMENT ---
+*.DS_Store
+.env
+node_modules/
+__pycache__/
+*.py[cod]
+*.sqlite*
+
+# --- LOCAL DIRECTORIES & PERSISTENT STATES ---
+Repos/
+state/sessions/
+state/daily_wake_up_data.json
+logs/prefetch.log
+logs/prefetch_validate.log
+logs/prefetch_errors.log
+
