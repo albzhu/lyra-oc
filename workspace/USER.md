@@ -1,6 +1,6 @@
 # USER.md - About Your Human
 
-- **Device:** _(e.g., iPhone 15 Pro Max)_
+- **Device:** _(e.g., iPhone XX)_
 - **Name:** User
 - **What to call them:** User
 - **Pronouns:** _(not specified)_
@@ -12,7 +12,7 @@
 
 - Operating stably within the Discord server channels.
 - Active projects include:
-    - **One Thought:** Geographic thought-sharing social app (ideation stage).
+    - **YOUR PROJECTS HERE**
 
 ## Preferences
 
