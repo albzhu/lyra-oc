@@ -4,6 +4,8 @@
 
 Named after the constellation *Lyra*—and its central guiding star Vega—this repository establishes a luminous, yield-driven ecosystem for parallelized workflows and asynchronous multi-agent coordination.
 
+Note: this project has been vibe-coded, and still in testing...
+
 ---
 
 ## 🌌 Key Highlights
