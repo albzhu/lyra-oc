@@ -1,274 +1,261 @@
 # LYRA-OC
 
-**LYRA-OC** is a fully customized, professional reference architecture and boilerplate for managing advanced **Multi-Agent Systems** under digital sovereignty. Built as a secure, local, and document-driven engine, it enables developers and power-users to deploy, coordinate, and orchestrate automated agents within highly disciplined local workspaces.
+**LYRA-OC** is a ready-to-run multi-agent AI system built on [OpenClaw](https://openclaw.ai). Eight specialized agents — each with a distinct role and personality — run locally on your machine, communicate with each other asynchronously, and are accessible through any channel you choose (web UI, Discord, Telegram, iMessage, and more).
 
-Named after the constellation *Lyra*—and its central guiding star Vega—this repository establishes a luminous, yield-driven ecosystem for parallelized workflows and asynchronous multi-agent coordination.
+Named after the constellation *Lyra* and its brightest star, Vega — the luminous center everything else orients around.
 
-Note: this project has been vibe-coded, and still in testing...
-
----
-
-## 🌌 Key Highlights
-
-* **Multi-Agent Coordination Blueprint:** Define and maintain multiple specialist personas (LYRA the router, SPECTRE the architect, Cinder the coder, ECHO the reviewer, and auxiliary support/debug twins) inside distinct persistent boundaries.
-* **MIAB (Message in a Bottle) Protocol:** A robust, file-based asynchronous callback transport. Prevents agent idling and token waste by pushing "resume contexts" onto an active return-stack lifecycle, freeing execution turns while delegating deep reasoning processes down the chain.
-* **Claude Code / ACP Native Support:** Seamless integration wrappers mapping terminal environments to Claude's Agentic Control Protocol (ACP) for high-context parallel debugging and automated refactoring inside individual workspaces.
-* **Zero-Leak Git Hygiene:** Pre-configured constraints and `.gitignore` protocols defensively structured to ensure local secrets, databases, high-churn session trajectories, and personal memories never escape to remote source controls.
-* **Automated Operational Workflows:** Standard life-cycle orchestrations bundled via a master `Makefile` for reliable service actions, token rolls, runtime syncing, and pipeline routines.
+> This project is actively evolving. Expect rough edges and feel free to make it your own.
 
 ---
 
-## 📁 System Architecture
+## Quick Start
+
+**On macOS:** download [`install.command`](./install.command), double-click it, and follow the prompts. That's it.
+
+The installer handles everything — Homebrew, Node, Python, the OpenClaw runtime, agent configuration, and startup. When it finishes, your browser opens to the OpenClaw web UI and LYRA is ready to talk.
+
+**You'll need:**
+- A Mac running macOS 12 or later
+- An [OpenRouter](https://openrouter.ai/keys) API key (free to sign up)
+- About 3–5 minutes
+
+**After setup**, say hello to LYRA in the web UI. She'll walk you through connecting any additional channels (Discord, Telegram, iMessage) and explain what each agent does.
+
+---
+
+## The Agent Fleet
+
+Eight agents run in parallel, each with a specialized role:
+
+| Agent | Name | Role |
+|-------|------|------|
+| `main` | **LYRA** | Orchestrator — your primary interface, routes work to specialists |
+| `planner` | **SPECTRE** | Architect — maps strategy and builds plans before any code is touched |
+| `coder` | **Cinder** | Implementer — turns plans into clean, working diffs |
+| `reviewer` | **ECHO** | Auditor — finds bugs, security gaps, and logic flaws |
+| `debug` | **Zero** | Debugger — reproduces, isolates, and fixes issues methodically |
+| `utility` | **Swift** | Utility worker — handles fast, mechanical tasks cheaply |
+| `sigma` | **SIGMA** | Analyst — financial and data analysis with a quant lens |
+| `free` | **VOID** | Scout — low-cost background checks and liveness monitoring |
+
+Each agent has its own workspace (`workspace-{name}/`) with identity and personality docs that you can read and customize.
+
+---
+
+## How Agents Talk to Each Other
+
+LYRA-OC uses the **MIAB (Message in a Bottle) Protocol** for async agent coordination. Instead of blocking a session while waiting for another agent to finish, the originating agent packages a compact resume context, fires the delegation, and ends its turn. When the work is done, the finishing agent wakes the next one in the chain.
 
 ```
-LYRA-OC/
-├── openclaw-template.json        # Unified master blueprint (Models, Roles, Plugins & Channels)
-├── Makefile                      # Master service daemon orchestration & lifecycle scripts
-├── docker-compose.yml            # Container orchestration (service: gateway → one process, all agents)
-├── env.example                   # Secured container environment variables template
-├── .gitignore                    # Gold-standard directory defense template
-├── scripts/                      # Lifecycle helpers invoked by the Makefile
-│   ├── sync-env.sh               # (python3) Regenerates openclaw.json from template + .env, syncs service-env
-│   └── roll-gateway-token.sh     # Materializes GATEWAY/DISCORD tokens into openclaw.json, then restarts
-├── docker/                       # Containerized gateway (host-path-identical bind mount)
-│   ├── Dockerfile                # node:22-slim + openclaw CLI; HOME = host path so absolute config paths resolve
-│   ├── entrypoint.sh             # Regenerates config (sync-env), then `openclaw gateway run --bind lan` (foreground)
-│   ├── docker.mk                 # `make -f docker/docker.mk d-*` build/up/logs/health targets
-│   └── README-docker.md          # Container deployment guide + parked iMessage-bridge seam
-├── acpx/                         # ACP wrappers for Terminal LLMs (codex + claude-agent)
-│   ├── codex-acp-wrapper.mjs     # Resolves the Codex ACP binary dynamically (env → require → project scan)
-│   └── claude-agent-acp-wrapper.mjs  # Same resolver for the Claude Agent ACP binary
-├── Skills/                       # Pre-configured sovereign local skills templates
-│   ├── miab-broker/              # MIAB LIFO callback stack: protocol docs + ledger observer + reaper
-│   │   ├── SKILL.md              # Lifecycle (register/create/forward/return/resolve) & state files
-│   │   └── scripts/
-│   │       ├── interagent_queue.py   # Ledger observer → rich logs → Discord (#scheduling) pipe
-│   │       ├── reap-callbacks.sh     # Stale/orphan bottle reaper + dangling-handle cleanup
-│   │       └── bin/
-│   │           ├── claw-callback.py       # Core LIFO stack engine
-│   │           └── claw-callback-reap.sh  # Low-level daemon reaper script
-│   └── token-observability/     # Daily token/cost auditing & multi-agent resource monitoring
-│       ├── SKILL.md              # Mission, trajectory interpretation & resource-leak checklist
-│       └── scripts/
-│           ├── token_tracker.py                   # Daily compiler: costs, per-skill avgs, leak audit
-│           └── generate_observability_manifest.py # Weekly rollup → observability/weekly/
-├── tools/                        # Host-side operator tooling
-│   └── console/                  # Config UIs over openclaw-template.json (web app + console)
-│       ├── OpenClaw-Console.command  # Local web app (Models / Agents / Reports / Terminal tabs)
-│       ├── oc_web.py             # Web server entrypoint
-│       ├── oc_config.py          # Shared config core
-│       ├── model_config.py       # Model definitions
-│       └── observability_report.py   # Reads observability/daily token reports
-└── workspace/                    # Centralized assistant workspace template
-    ├── IDENTITY.md               # Persona identifier, designate, and description
-    ├── SOUL.md                   # Agent guidelines, red-lines, and vibe check
-    ├── USER.md                   # Human identity file mapping local preferences
-    ├── AGENTS.md                 # Agent routing patterns and delegation directions
-    ├── TOOLS.md                  # Active tool lists, platform mappings, and notes
-    └── HEARTBEAT.md              # Periodic background audit loop rules
+LYRA receives a complex task
+  │  creates callback, delegates to SPECTRE, ends turn
+  ▼
+SPECTRE architects a plan
+  │  forwards to Cinder with the blueprint, ends turn
+  ▼
+Cinder implements the plan
+  │  returns result, wakes SPECTRE
+  ▼
+SPECTRE reviews output, wakes LYRA
+  ▼
+LYRA delivers the final result to you
 ```
+
+No agent idles waiting. No tokens wasted on polling. The full protocol is documented in [`Skills/miab-broker/SKILL.md`](./Skills/miab-broker/SKILL.md).
 
 ---
 
-## 🚦 Getting Started
+## File Structure
 
-### 1. Prerequisites
-* **macOS / Linux Environment** (Metal acceleration recommended for local executions via Ollama)
-* **Node 24** (recommended) or **Node 22.19+** — required by the OpenClaw runtime
-* **Python 3.10+** (Required for callback & tool scripts)
-* **OpenClaw** installed on the host (step 1 of the walkthrough below installs it)
+```
+lyra-oc/
+├── install.command               Double-clickable macOS installer
+├── openclaw-template.json        Master config — edit this, never openclaw.json
+├── Makefile                      Lifecycle commands (see below)
+├── env.example                   Environment variable template
+├── scripts/
+│   ├── wizard.sh                 Interactive setup prompts
+│   ├── bootstrap.sh              Prereq install + workspace seeding + gateway start
+│   ├── set-model-preset.py       Patches model primary/fallbacks by provider choice
+│   ├── sync-env.sh               Regenerates openclaw.json from template + .env
+│   └── roll-gateway-token.sh     Rotates gateway auth token
+├── workspace/                    LYRA's workspace (your primary agent)
+├── workspace-spectre/            SPECTRE's workspace
+├── workspace-cinder/             Cinder's workspace
+├── workspace-echo/               ECHO's workspace
+├── workspace-zero/               Zero's workspace
+├── workspace-swift/              Swift's workspace
+├── workspace-sigma/              SIGMA's workspace
+├── workspace-void/               VOID's workspace
+├── Skills/
+│   ├── miab-broker/              Async agent callback protocol + CLI
+│   └── token-observability/      Daily token cost auditing
+├── tools/console/                Local web config UI for model/agent settings
+├── acpx/                         ACP wrappers for Claude Code and Codex
+└── docker/                       Containerized deployment (advanced)
+```
 
-### 2. Manual Local Installation Walkthrough (Guidance)
-Running the platform directly on your local system allows the framework to make native terminal completions, manipulate the filesystem directly, and execute fast scripting procedures. Follow these steps to configure your environment:
+**Key rule:** always edit `openclaw-template.json`, never `openclaw.json`. The live config is regenerated from the template every time you run `make sync`.
 
-1. **Install the OpenClaw Runtime:**
-   LYRA-OC is config + skills, not the runtime itself, so the `openclaw` binary is
-   installed separately. Use the official installer (detects OS, installs Node if
-   needed, runs onboarding), or install via a package manager you manage yourself:
-   ```bash
-   # Recommended: official installer
-   curl -fsSL https://openclaw.ai/install.sh | bash
+---
 
-   # Or via npm/pnpm/bun (if you manage Node yourself), then register the daemon:
-   npm install -g openclaw@latest
-   openclaw onboard --install-daemon   # macOS LaunchAgent / Linux systemd user service
-
-   # Verify:
-   openclaw --version
-   openclaw doctor
-   ```
-   > LYRA-OC's files are expected to live in `~/.openclaw` (the `Makefile`/console
-   > run from there). Place this repo's contents there, or point
-   > `OPENCLAW_WORKSPACE_ROOT` at its location.
-
-2. **Configure Environment Variables:**
-   Create your local `.env` file to hold access keys and custom configurations:
-   ```bash
-   cp env.example .env
-   # Open .env and populate GATEWAY_AUTH_TOKEN, DISCORD_BOT_TOKEN, API keys (e.g., CLAUDE_API_KEY, GEMINI_API_KEY), and other settings.
-   ```
-
-3. **Generate Your Configuration Manifest (`openclaw.json`):**
-   `openclaw.json` is *generated* from the template with secrets injected from `.env` — don't edit it by hand (it's regenerated and gitignored):
-   ```bash
-   make sync
-   # Regenerates openclaw.json from openclaw-template.json (+ .env) and syncs service-env.
-   # Always edit openclaw-template.json instead, then re-run `make sync` to apply.
-   ```
-
-4. **Start the Gateway:**
-   With the runtime installed and config generated, start the gateway service:
-   ```bash
-   make up        # starts the gateway daemon (returns immediately)
-   make up-logs   # or: start, then follow logs
-   ```
-
-5. **Verify Gateway Connectivity:**
-   Confirm the OpenClaw Gateway is online and executing correctly:
-   ```bash
-   # Status of your host service daemon
-   openclaw status
-   # Check logs and confirm target port (default: 18789) is bound
-   tail -n 100 ~/.openclaw/logs/gateway.log
-   ```
-
-6. **Deploy Sovereign Local Skills:**
-   Ensure each of your specialized agent workspaces contains the necessary target capability libraries:
-   ```bash
-   # Initialize and seed individual agent workspaces (SPECTRE, Cinder, etc.) with pre-configured templates:
-   for agent in spectre cinder echo zero void; do
-     mkdir -p ~/.openclaw/workspace-$agent/Skills
-     cp -R Skills/ ~/.openclaw/workspace-$agent/Skills/
-   done
-   ```
-
-### Optional Integrations
-These are **not required** for the gateway to boot. The config references each by
-path, so install them only if you want the corresponding capability. Without them
-the rest of the fleet runs unaffected — OpenClaw skips the missing path/backend.
-
-#### Optional: `agent-skills` repo (external plugin skills)
-`openclaw-template.json` loads extra plugin skills from
-`plugins.load.paths → ${OPENCLAW_WORKSPACE_ROOT}/workspace/Repos/agent-skills`.
-The whole `Repos/` tree is gitignored, so a clean checkout does **not** carry it —
-clone it into that exact location:
+## Makefile Reference
 
 ```bash
-# Defaults to ~/.openclaw when OPENCLAW_WORKSPACE_ROOT is unset.
-mkdir -p "${OPENCLAW_WORKSPACE_ROOT:-$HOME/.openclaw}/workspace/Repos"
-git clone <your-agent-skills-remote> \
-  "${OPENCLAW_WORKSPACE_ROOT:-$HOME/.openclaw}/workspace/Repos/agent-skills"
-make restart   # reload so the new plugin path is picked up
+make bootstrap    # First-time setup: prereqs, workspaces, gateway
+make doctor       # Health check — shows what's working and what's not
+
+make up           # Start the gateway
+make up-logs      # Start the gateway and follow logs
+make down         # Stop the gateway
+make restart      # sync → stop → update runtime → start + follow logs
+make sync         # Regenerate openclaw.json from template + .env
+make update       # Update the OpenClaw runtime
+make roll         # Rotate the gateway auth token
+make logs         # Follow live gateway logs
+make force        # Reinstall the launchd daemon (fixes "service not loaded")
+make doctor       # Check gateway, env, workspaces, and config
 ```
 
-If you don't use it, drop the entry from `plugins.load.paths` in
-`openclaw-template.json` and `make sync` to avoid a missing-path warning.
+---
 
-#### Optional: `opencode` (ACP coding backend)
-The `acpx` plugin can route to [opencode](https://opencode.ai) as an ACP agent.
-Its configured command is:
+## Configuration
 
-```
-env OPENCODE_CONFIG=${HOME}/.openclaw/opencode/opencode.json ~/.opencode/bin/opencode acp
-```
+### Adding or changing API keys
 
-So two things must exist for that backend to work:
+Edit `.env`, then run `make sync` to apply:
 
 ```bash
-# 1. The opencode binary at ~/.opencode/bin/opencode (per opencode's installer):
+OPENROUTER_API_KEY=sk-or-...     # Required — all agents route through OpenRouter
+CLAUDE_API_KEY=sk-ant-...        # Optional — improves Claude reliability
+GEMINI_API_KEY=AIza...           # Optional — improves Gemini reliability
+OPENAI_API_KEY=sk-...            # Optional — improves GPT reliability
+GATEWAY_AUTH_TOKEN=...           # Auto-generated on first run
+```
+
+### Changing a model
+
+Edit `openclaw-template.json` → find the agent under `agents.list` → update `model.primary` or `model.fallbacks`. Then:
+
+```bash
+make sync && make restart
+```
+
+Or run the preset script to reconfigure the default model family for all agents:
+
+```bash
+python3 scripts/set-model-preset.py claude   # or: gemini, openai
+make sync && make restart
+```
+
+### Customizing an agent
+
+Each workspace has two files you can freely edit:
+
+- `IDENTITY.md` — name, vibe, emoji, avatar
+- `SOUL.md` — personality, operating principles, boundaries
+
+Changes take effect on the next conversation with that agent — no restart needed.
+
+---
+
+## Optional Integrations
+
+These are not required to run. LYRA can walk you through any of them after your system is up.
+
+### Channels
+
+By default LYRA is accessible through the OpenClaw web UI. To connect additional channels, ask LYRA: *"How do I connect Discord?"* (or Telegram, iMessage, etc.) — she'll guide you step by step.
+
+For Discord specifically, the template is pre-configured; you just need to supply `DISCORD_BOT_TOKEN` in `.env`.
+
+### Agent Skills plugin (`agent-skills`)
+
+The template can load extra plugin skills from an external repo:
+
+```bash
+mkdir -p ~/.openclaw/workspace/Repos
+git clone <your-agent-skills-remote> ~/.openclaw/workspace/Repos/agent-skills
+make restart
+```
+
+If you're not using it, remove the entry from `plugins.load.paths` in `openclaw-template.json` to suppress the missing-path warning.
+
+### OpenCode ACP backend
+
+The `acpx` plugin can delegate coding work to [opencode](https://opencode.ai):
+
+```bash
 curl -fsSL https://opencode.ai/install | bash
-
-# 2. Its config where the acpx command expects it:
 mkdir -p ~/.openclaw/opencode
-$EDITOR ~/.openclaw/opencode/opencode.json   # model/provider config for opencode
+# configure ~/.openclaw/opencode/opencode.json with your model settings
 ```
 
-> **Note:** opencode is a separate binary not installed in the Docker image, so
-> this backend is host-only. The other ACP backends (Codex, Claude Agent) and all
-> agents are unaffected if opencode is absent.
+### Docker
 
-### Alternatively: Run with Docker Compose (Containerized Version)
-If you prefer a sandboxed, containerized environment that keeps your host machine completely untouched, you can use the included Docker deployment:
+If you prefer a containerized setup:
 
-> **Stop the host gateway first** (`make down`) — the container bind-mounts the same `~/.openclaw`, and two gateways writing the same SQLite DBs will corrupt state.
-
-1. Copy the example environment template and configure your access tokens:
-   ```bash
-   cp env.example .env
-   # Open `.env` and fill in your GATEWAY_AUTH_TOKEN, DISCORD_BOT_TOKEN, API keys, and timezone.
-   ```
-2. Build and stand up the OpenClaw service inside a background container:
-   ```bash
-   make -f docker/docker.mk d-build      # build the image
-   make -f docker/docker.mk d-up-logs    # start container + follow logs
-   ```
-   This spins up the `openclaw-gateway` container, binds port `18789`, and bind-mounts your live `~/.openclaw` so all agents/workspaces/memory/sessions are reused as-is. See `docker/README-docker.md` for details. (Plain `docker compose up -d --build` works too.)
-
-### 3. Service Lifecycle
-The master `Makefile` exposes reliable commands for controlling your local orchestrations safely:
 ```bash
-make sync       # Regenerate openclaw.json from template + .env, sync service-env
-make up         # Start the gateway (returns immediately)
-make up-logs    # Start the gateway, then follow logs
-make down       # Stop the gateway
-make restart    # sync → stop → update → start + follow logs
-make roll       # Sync GATEWAY_AUTH_TOKEN / DISCORD_BOT_TOKEN from .env into openclaw.json, then restart
-make docker     # Stop host gateway, then build + run the container (follows logs)
+make down                              # stop the host gateway first
+make -f docker/docker.mk d-build
+make -f docker/docker.mk d-up-logs
 ```
+
+The container bind-mounts `~/.openclaw`, so all agents, workspaces, and sessions are shared with the host. See [`docker/README-docker.md`](./docker/README-docker.md) for details.
 
 ---
 
-## 🔄 MIAB Protocol (Message in a Bottle)
+## Updating
 
-The asynchronous callback mechanism has been elevated to a formal local task capability: the **`miab-broker`** skill. 
+To update the OpenClaw runtime:
 
-This protocol allows an active caller to spawn a delegated agent on a heavy/deep background task and yield its runtime session immediately—preventing CPU-blocking and token-wasting loop-polls. Controls cleanly unwind back up the LIFO (Last-In-First-Out) state stack whenever woken.
-
-For full execution specifications, CLI command options, and ledger observer triggers, inspect **`Skills/miab-broker/SKILL.md`**.
-
-```
-       [Caller: MAIN/ORCHESTRATOR]
-             │   Creates CB ID, pushes resume frame,
-             │   hands off task & ends turn.
-             ▼
-      [Holder: PLANNER]
-             │   Runs complex planning; forwards
-             │   to coder if subtasks arise.
-             ▼
-       [Holder: CODER]
-             │   Completes work; calls returnValue.
-             ▼
-[Target resurfaced & woken via cron(action=wake)]
-```
-
-### Callback Operations
-All callback actions are tracked directly via the registry CLI under the control of the `miab-broker` skill:
 ```bash
-# Register an agent path to enable the wake path
-python3 Skills/miab-broker/scripts/bin/claw-callback.py register --agent main --agent-id agent:main
+make update
+```
 
-# Initiate an asynchronous handoff
-python3 Skills/miab-broker/scripts/bin/claw-callback.py create --task "Analyze files" --from main --to planner \
-  --summary "Awaiting architecture file output" \
-  --step "Examine generated architecture maps" \
-  --expects "Clean JSON spec mapping targets"
+This updates the `openclaw` binary only. Your config, workspaces, and `.env` are untouched.
 
-# Complete the work and surface the target returning holder session
-python3 Skills/miab-broker/scripts/bin/claw-callback.py return --id cb-XXXX --from planner --result "Analysis finished"
+To pull the latest LYRA-OC templates and scripts (your `.env` and any local customizations are preserved — they're gitignored):
+
+```bash
+git -C ~/.openclaw pull origin main
+make restart
 ```
 
 ---
 
-## 🛡️ Git Hygiene Policy
+## Git Hygiene
 
-This blueprint comes equipped with a strict local `.gitignore` optimized for LLM workspaces. It guarantees that the following elements stay strictly confidential and local to your system:
-* Active session logs, prompts, and raw chat trajectories (under `state/sessions/`)
-* Local configurations (`openclaw.json` and `.env` files)
-* SQLite database file states, journals, and WAL temporary registers (`*.sqlite*`)
-* Backup, roll transcripts, and temporary debugging paths
+The `.gitignore` is configured to keep secrets and high-churn state local:
+
+- `.env` and `openclaw.json` — never committed
+- `*.sqlite*` — agent state databases
+- `state/sessions/` — chat history and skill prompt cache
+- `openclaw-backups/` — config snapshots
+- `logs/` — gateway logs
+
+What IS committed: `openclaw-template.json`, workspace identity docs, skills, and scripts. Everything needed to reproduce the setup on a new machine.
 
 ---
 
-## 📜 License
+## Troubleshooting
 
-This boilerplate configuration and blueprint package are distributed under the **MIT License**. Build, modify, and customize to mold your digital sovereignty in absolute privacy.
+**`make doctor` shows failures:**
+Run the suggested fix command shown next to each failure. Most issues resolve with `make sync` followed by `make restart`.
+
+**Gateway won't start ("service not loaded"):**
+```bash
+make force
+```
+
+**`make sync` fails with drift error:**
+`openclaw.json` has keys not in the template — usually from `openclaw update` adding new fields. Port the listed keys into `openclaw-template.json`, then re-run `make sync`.
+
+**Starting fresh on an existing machine:**
+The installer detects an existing `~/.openclaw` and re-runs setup without touching your `.env` or customizations.
+
+---
+
+## License
+
+MIT — build on it, customize it, make it yours.
