@@ -1,4 +1,4 @@
-.PHONY: up up-logs down restart cold-restart docker force logs roll sync pre gog gog-all help
+.PHONY: up up-logs down restart cold-restart docker force logs roll sync bootstrap doctor pre gog gog-all help
 
 # Resolve the workspace root the same way the gateway does: from OPENCLAW_WORKSPACE_ROOT
 # in .env (the single knob that relocates all workspaces), falling back to ~/.openclaw.
@@ -10,9 +10,11 @@ OPENCLAW_WORKSPACE_ROOT := $(HOME)/.openclaw
 endif
 
 help:
+	@echo "bootstrap    - first-time setup: install prereqs, seed workspaces, start gateway"
+	@echo "doctor       - check that everything is configured and running correctly"
 	@echo "up           - start the gateway (returns immediately)"
 	@echo "up-logs      - start the gateway, then follow logs"
-	@echo "update       - check for new OpenClaw updates"
+	@echo "update       - update the OpenClaw runtime"
 	@echo "down         - stop the gateway"
 	@echo "restart      - sync, stop, then start + follow logs"
 	@echo "cold-restart - sync, stop, then start (no log follow)"
@@ -20,10 +22,13 @@ help:
 	@echo "force        - reinstall + reload the launchd service (fixes 'service not loaded')"
 	@echo "logs         - follow gateway logs"
 	@echo "roll         - rotate the gateway auth token"
-	@echo "sync         - sync .env keys into service-env"
-	@echo "pre          - run portfolio-check pre step"
-	@echo "gog          - run gog for EMAIL=<email>"
-	@echo "gog-all      - run gog for GOG_EMAILS=<emails>"
+	@echo "sync         - regenerate openclaw.json from template + .env"
+
+bootstrap:
+	@bash scripts/bootstrap.sh
+
+doctor:
+	@bash scripts/doctor.sh
 
 up:
 	@openclaw gateway start
