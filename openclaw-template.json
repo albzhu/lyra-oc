@@ -471,6 +471,12 @@
       "1password": {
         "enabled": false
       },
+      "apple-notes": {
+        "enabled": false
+      },
+      "apple-reminders": {
+        "enabled": false
+      },
       "bear-notes": {
         "enabled": false
       },
@@ -490,6 +496,21 @@
         "enabled": false
       },
       "eightctl": {
+        "enabled": false
+      },
+      "gemini": {
+        "enabled": false
+      },
+      "gh-issues": {
+        "enabled": false
+      },
+      "gifgrep": {
+        "enabled": false
+      },
+      "github": {
+        "enabled": false
+      },
+      "gog": {
         "enabled": false
       },
       "goplaces": {
@@ -555,13 +576,28 @@
       "sonoscli": {
         "enabled": false
       },
+      "spotify-player": {
+        "enabled": false
+      },
+      "summarize": {
+        "enabled": false
+      },
+      "things-mac": {
+        "enabled": false
+      },
       "tmux": {
         "enabled": false
       },
       "trello": {
         "enabled": false
       },
+      "video-frames": {
+        "enabled": false
+      },
       "voice-call": {
+        "enabled": false
+      },
+      "xurl": {
         "enabled": false
       }
     }

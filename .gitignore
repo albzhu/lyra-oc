@@ -22,3 +22,7 @@ logs/prefetch.log
 logs/prefetch_validate.log
 logs/prefetch_errors.log
 
+env-copy
+tmp/
+openclaw-template.json.new
+openclaw-template.json.new_node_test
