@@ -441,6 +441,39 @@ def cmd_resolve(args):
                        + " Report the final result to the user/channel."})
 
 
+def cmd_cancel(args):
+    env = load(args.id)
+    if env["status"] != "pending":
+        die(f"callback {args.id} is {env['status']}, cannot cancel")
+    env["status"] = "cancelled"
+    env["history"].append({"at": now_iso(), "agent": args.frm, "action": "cancel",
+                           "detail": args.reason or "Cancelled by user / system command"})
+    
+    # Save the updated status within the envelope context before move
+    save(env)
+    ledger_append({"id": args.id, "event": "cancel", "by": args.frm, "reason": args.reason or "no reason provided"})
+    
+    # Move envelope context file to state/callbacks/archive/ for retrospective analysis
+    arch_dir = cb_dir() / "archive"
+    arch_dir.mkdir(parents=True, exist_ok=True)
+    arch_path = arch_dir / f"{args.id}.json"
+    p = envelope_path(args.id)
+    
+    archived = False
+    try:
+        # Atomic rename to move out of hot callbacks dir into archive
+        p.replace(arch_path)
+        archived = True
+    except OSError:
+        # Fallback if moving fails: just purge to ensure safety
+        _purge(args.id, env)
+        
+    emit({"ok": True, "id": args.id, "status": "cancelled", "cleaned_up": archived,
+          "archived_to": str(arch_path) if archived else None,
+          "next_step": f"Callback cancelled. Complete execution history archived to {arch_path}." if archived else
+                       "Callback cancelled and purged (archiving failed)."})
+
+
 def cmd_show(args):
     env = load(args.id)
     if args.json:
@@ -569,6 +602,12 @@ def main():
     ls = sub.add_parser("list", help="list active callbacks")
     ls.add_argument("--json", action="store_true")
     ls.set_defaults(func=cmd_list)
+
+    cn = sub.add_parser("cancel", help="cancel and abort a pending task callback")
+    cn.add_argument("--id", required=True, help="callback id")
+    cn.add_argument("--from", dest="frm", required=True, help="your agent id")
+    cn.add_argument("--reason", help="reason for cancellation")
+    cn.set_defaults(func=cmd_cancel)
 
     sw = sub.add_parser("sweep", help="find/fail stale orphaned callbacks")
     sw.add_argument("--older-than", type=int, default=120, help="minutes (default 120)")
