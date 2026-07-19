@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-VERSION = 1
+VERSION = 1.1
 
 
 # --------------------------------------------------------------------------- paths
