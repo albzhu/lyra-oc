@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 """
-interagent_queue — live transaction observer for the MIAB callback ledger.
+interagent_queue — live transaction observer and file logger for the MIAB callback ledger.
 
-Tails the append-only callback ledger (state/callbacks/ledger.jsonl), converts raw
-create / forward / return / resolve / fail events into beautiful rich-text logs using
-the agent identity map, advances a once-only cursor, and — when the live toggle is on —
-pipes the formatted batch to the designated Discord channel (#scheduling).
+PREREQUISITE: Requires the `miab-broker` skill to be installed and active.
+It tails the append-only callback ledger (state/callbacks/ledger.jsonl) managed by miab-broker,
+converts raw create / forward / return / resolve / cancel / fail events into human-readable log
+entries using the agent identity map, advances a once-only cursor, and — when the live
+toggle is on — writes the formatted batch to the log file ($CLAW_HOME/logs/interagent-queue.log).
 
-This is a READ-ONLY observer: it never mutates the ledger or envelopes. The only file it
-writes is its own queue_state.json (toggle + cursor), saved atomically.
+This is a READ-ONLY observer over the ledger: it never mutates the ledger or envelopes.
+The only files it writes are its own queue_state.json (toggle + cursor) and the output log file.
 
 Path resolution (portable, sovereign):
-  - CLAW_HOME    : broker root          (default: ~/.openclaw)
-  - CLAW_LEDGER  : explicit ledger path (overrides CLAW_HOME/state/callbacks/ledger.jsonl)
+  - CLAW_HOME      : broker root          (default: ~/.openclaw)
+  - CLAW_LEDGER    : explicit ledger path (overrides CLAW_HOME/state/callbacks/ledger.jsonl)
+  - CLAW_QUEUE_LOG : explicit log path    (overrides CLAW_HOME/logs/interagent-queue.log)
   - LYRA_WORKSPACE / CLAW_QUEUE_STATE : where queue_state.json lives
-                   (default: ~/.openclaw/workspace/state/callbacks/queue_state.json)
+                     (default: ~/.openclaw/workspace/state/callbacks/queue_state.json)
 """
 import os
 import sys
 import json
-import shutil
-import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 # --------------------------------------------------------------------------- paths
@@ -42,7 +43,18 @@ def state_file() -> Path:
         return Path(env).expanduser()
     return workspace_dir() / "state" / "callbacks" / "queue_state.json"
 
-DEFAULT_CHANNEL = "channel:1517433532518109195"  # #scheduling
+def log_file() -> Path:
+    env = os.environ.get("CLAW_QUEUE_LOG")
+    if env:
+        return Path(env).expanduser()
+    return claw_home() / "logs" / "interagent-queue.log"
+
+def check_prerequisites() -> tuple[bool, str]:
+    """Verify that miab-broker is active and the callback state directory exists."""
+    cb_dir = claw_home() / "state" / "callbacks"
+    if not cb_dir.exists():
+        return False, f"Prerequisite check failed: miab-broker state directory not found at {cb_dir}. Please ensure miab-broker is installed and initialized."
+    return True, "OK"
 
 # --------------------------------------------------------------- agent identity map
 AGENT_MAP = {
@@ -70,7 +82,7 @@ def load_state() -> dict:
             return json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             pass
-    return {"enabled": False, "last_processed_line": 0, "target_channel": DEFAULT_CHANNEL}
+    return {"enabled": False, "last_processed_line": 0}
 
 def save_state(state: dict) -> None:
     p = state_file()
@@ -81,7 +93,7 @@ def save_state(state: dict) -> None:
 
 # ----------------------------------------------------------------- summarization
 def sanitize_and_summarize(text, limit=350):
-    """Clean up and produce a beautiful concise summary of task/result text."""
+    """Clean up and produce a concise summary of task/result text."""
     if not text:
         return ""
     lines = text.split("\n")
@@ -104,7 +116,7 @@ def sanitize_and_summarize(text, limit=350):
 
 # ----------------------------------------------------------------- event rendering
 def format_event(rec):
-    """Render one ledger record into a rich-text Discord/stdout message (or None)."""
+    """Render one ledger record into a human-readable log entry (or None)."""
     event = rec.get("event")
     cid = rec.get("id", "unknown")[:14]
     by = who(rec.get("by"))
@@ -113,51 +125,51 @@ def format_event(rec):
         target = who(rec.get("to"))
         task_summary = sanitize_and_summarize(rec.get("task", ""))
         return (
-            f"📥 **[Enqueued Task]** `{cid}`\n"
-            f"**From:** {by}\n"
-            f"**To:** {target}\n"
-            f"**Task Assigned:** {task_summary}"
+            f"📥 [Enqueued Task] {cid}\n"
+            f"   From: {by}\n"
+            f"   To: {target}\n"
+            f"   Task Assigned: {task_summary}"
         )
     if event == "forward":
         target = who(rec.get("to"))
         return (
-            f"➡️ **[Forwarded Task]** `{cid}`\n"
-            f"**By:** {by}\n"
-            f"**Forwarded To:** {target}\n"
-            f"*Packaged parent callback frame onto LIFO stack.*"
+            f"➡️ [Forwarded Task] {cid}\n"
+            f"   By: {by}\n"
+            f"   Forwarded To: {target}\n"
+            f"   Note: Packaged parent callback frame onto LIFO stack."
         )
     if event == "return":
         wake_target = who(rec.get("wake"))
         return (
-            f"↩️ **[Returning Task]** `{cid}`\n"
-            f"**From:** {by}\n"
-            f"**Waking:** {wake_target}\n"
-            f"*Handing execution results back up the stack.*"
+            f"↩️ [Returning Task] {cid}\n"
+            f"   From: {by}\n"
+            f"   Waking: {wake_target}\n"
+            f"   Note: Handing execution results back up the stack."
         )
     if event == "resolve":
         task_summary = sanitize_and_summarize(rec.get("task", ""))
         result_summary = sanitize_and_summarize(rec.get("result", ""))
         return (
-            f"✅ **[Resolved Task]** `{cid}`\n"
-            f"**By:** {by}\n"
-            f"**Task:** {task_summary}\n"
-            f"**Resolution Outcome:** {result_summary}"
+            f"✅ [Resolved Task] {cid}\n"
+            f"   By: {by}\n"
+            f"   Task: {task_summary}\n"
+            f"   Resolution Outcome: {result_summary}"
         )
     if event == "cancel":
         reason = rec.get("reason", "Cancelled by user / system command")
         return (
-            f"❌ **[Cancelled Task]** `{cid}`\n"
-            f"**By:** {by}\n"
-            f"**Reason:** {reason}"
+            f"❌ [Cancelled Task] {cid}\n"
+            f"   By: {by}\n"
+            f"   Reason: {reason}"
         )
     if event == "fail":
         reason = rec.get("reason", "stale")
         holder = who(rec.get("holder"))
         return (
-            f"⚠️ **[Callback Failed/Reaped]** `{cid}`\n"
-            f"**By:** {by}\n"
-            f"**Reason:** {reason}\n"
-            f"**Last Holder:** {holder}"
+            f"⚠️ [Callback Failed/Reaped] {cid}\n"
+            f"   By: {by}\n"
+            f"   Reason: {reason}\n"
+            f"   Last Holder: {holder}"
         )
     return None
 
@@ -168,7 +180,7 @@ def collect_new(state, advance):
     lf = ledger_file()
     cursor = state.get("last_processed_line", 0)
     if not lf.exists():
-        return [], f"Ledger not found at {lf}; nothing to process.", cursor
+        return [], f"Ledger not found at {lf}; miab-broker prerequisite missing or ledger not yet created.", cursor
     try:
         with lf.open("r", encoding="utf-8") as f:
             lines = [l.strip() for l in f if l.strip()]
@@ -194,38 +206,38 @@ def collect_new(state, advance):
     status = f"Read {total - cursor} new entries, rendered {len(messages)} message(s)."
     return messages, status, new_cursor
 
-# ----------------------------------------------------------------- Discord delivery
-def deliver(messages, channel):
-    """Pipe formatted logs to the target Discord channel via the openclaw CLI.
-
-    Degrades gracefully: if `openclaw` isn't on PATH (e.g. running off-host), returns
-    False so the caller falls back to stdout — the observer never hard-fails on delivery.
-    """
+# ----------------------------------------------------------------- Log delivery
+def deliver(messages):
+    """Append formatted logs to the target log file ($CLAW_HOME/logs/interagent-queue.log)."""
     if not messages:
         return True
-    if shutil.which("openclaw") is None:
-        return True
-    chan = channel.split(":", 1)[-1] if ":" in channel else channel
-    body = "\n\n".join(messages)
+    lf = log_file()
+    lf.parent.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     try:
-        subprocess.run(
-            ["openclaw", "notify", "--channel", f"discord:{chan}", "--text", body],
-            check=True, capture_output=True, text=True, timeout=30,
-        )
+        with lf.open("a", encoding="utf-8") as f:
+            for msg in messages:
+                f.write(f"[{ts}]\n{msg}\n\n")
         return True
     except Exception as e:
-        print(f"discord delivery failed: {e}", file=sys.stderr)
+        print(f"log file delivery failed: {e}", file=sys.stderr)
         return False
 
 # --------------------------------------------------------------------------- main
 def main():
     cmd = sys.argv[1].lower() if len(sys.argv) > 1 else "process"
+
+    ok, err_msg = check_prerequisites()
+    if not ok and cmd in ["on", "process"]:
+        print(json.dumps({"ok": False, "error": err_msg, "prerequisite": "miab-broker"}, indent=2), file=sys.stderr)
+        sys.exit(1)
+
     state = load_state()
 
     if cmd == "on":
         state["enabled"] = True
         save_state(state)
-        print(json.dumps({"enabled": True, "status": "ON"}))
+        print(json.dumps({"enabled": True, "status": "ON", "log_file": str(log_file()), "prerequisite": "miab-broker (verified)"}))
         return
 
     if cmd == "off":
@@ -235,32 +247,36 @@ def main():
         return
 
     if cmd == "status":
+        prereq_ok, _ = check_prerequisites()
         print(json.dumps({
             "enabled": state.get("enabled", False),
             "status": "ON" if state.get("enabled") else "OFF",
             "last_processed_line": state.get("last_processed_line", 0),
-            "target_channel": state.get("target_channel", DEFAULT_CHANNEL),
+            "log_file": str(log_file()),
             "ledger": str(ledger_file()),
-            "state_file": str(state_file())
+            "state_file": str(state_file()),
+            "prerequisites": {
+                "miab-broker": "ok" if prereq_ok else "missing"
+            }
         }, indent=2))
         return
 
     if cmd == "peek":
         messages, status, _ = collect_new(state, advance=False)
-        print(json.dumps({"messages": messages, "status": status, "delivered": False}, indent=2))
+        print(json.dumps({"messages": messages, "status": status, "delivered": False, "log_file": str(log_file())}, indent=2))
         return
 
     if cmd == "process":
         if not state.get("enabled", False):
             print(json.dumps({"messages": [], "status": "Queue DISABLED — skipping sweep.",
-                              "delivered": False}))
+                              "delivered": False, "log_file": str(log_file())}))
             return
         messages, status, new_cursor = collect_new(state, advance=True)
-        delivered = deliver(messages, state.get("target_channel", DEFAULT_CHANNEL))
+        delivered = deliver(messages)
         if delivered or not messages:
             state["last_processed_line"] = new_cursor
             save_state(state)
-        print(json.dumps({"messages": messages, "status": status, "delivered": delivered},
+        print(json.dumps({"messages": messages, "status": status, "delivered": delivered, "log_file": str(log_file())},
                          indent=2))
         return
 
